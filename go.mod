@@ -1,6 +1,6 @@
 module github.com/gocrane/kubectl-crane
 
-go 1.18
+go 1.17
 
 require (
 	github.com/gocrane/api v0.5.0
