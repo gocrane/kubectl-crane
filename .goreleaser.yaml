@@ -50,7 +50,7 @@ changelog:
 
 release:
   github:
-    owner: crane
+    owner: gocrane
     name: kubectl-crane
   draft: true
   prerelease: auto
