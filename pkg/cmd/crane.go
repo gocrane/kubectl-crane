@@ -21,6 +21,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/api/meta"
+	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/rest"
 
 	"k8s.io/cli-runtime/pkg/genericclioptions"
@@ -91,4 +92,3 @@ func (o *CraneOptions) Complete(cmd *cobra.Command, args []string) error {
 func (o *CraneOptions) Validate() error {
 	return nil
 }
-
