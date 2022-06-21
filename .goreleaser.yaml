@@ -47,3 +47,10 @@ changelog:
     exclude:
       - '^docs:'
       - '^test:'
+
+release:
+  github:
+    owner: crane
+    name: kubectl-crane
+  draft: true
+  prerelease: auto
