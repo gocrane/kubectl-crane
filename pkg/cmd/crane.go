@@ -30,9 +30,9 @@ import (
 var (
 	craneExample = `
 	# view view pod resource recommendation
-	%[1]s crane pod 
+	%[1]s crane pod
 
-	# view pod resource recommendations 
+	# view pod resource recommendations
 	%[1]s crane workload
 `
 
@@ -69,6 +69,7 @@ func NewCmdCrane(streams genericclioptions.IOStreams) *cobra.Command {
 
 	cmd.AddCommand(newCmdCranePod(streams))
 	cmd.AddCommand(newCmdCraneWorkload(streams))
+	cmd.AddCommand(newCmdVersion())
 
 	return cmd
 }
