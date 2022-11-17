@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"github.com/gocrane/kubectl-crane/pkg/cmd/options"
 
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/jedib0t/go-pretty/v6/text"
@@ -9,37 +10,37 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/cli-runtime/pkg/genericclioptions"
-	"k8s.io/client-go/kubernetes"
 	"k8s.io/klog/v2"
 
 	analysisv1alph1 "github.com/gocrane/api/analysis/v1alpha1"
-	craneclientset "github.com/gocrane/api/pkg/generated/clientset/versioned"
 )
 
-type CraneOptionsPod struct {
-	CraneOptions
+type CranePodOptions struct {
+	CommonOptions *options.CommonOptions
 	AllNamespaces bool
 }
 
-func newCmdCranePod(streams genericclioptions.IOStreams) *cobra.Command {
-	craneOptions := NewCraneOptions(streams)
-	podOptions := &CraneOptionsPod{
-		CraneOptions: *craneOptions,
+func NewCranePodOptions() *CranePodOptions {
+	return &CranePodOptions{
+		CommonOptions: options.NewCommonOptions(),
 	}
+}
+
+func NewCmdCranePod() *cobra.Command {
+	o := NewCranePodOptions()
 
 	cmd := &cobra.Command{
 		Use:   "pod",
 		Short: "view pod resource recommendations",
 		RunE: func(c *cobra.Command, args []string) error {
-			if err := podOptions.Complete(c, args); err != nil {
+			if err := o.Complete(c, args); err != nil {
 				return err
 			}
-			if err := podOptions.Validate(); err != nil {
+			if err := o.Validate(); err != nil {
 				return err
 			}
 
-			if err := podOptions.Run(); err != nil {
+			if err := o.Run(); err != nil {
 				return err
 			}
 
@@ -47,57 +48,46 @@ func newCmdCranePod(streams genericclioptions.IOStreams) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().BoolVarP(&podOptions.AllNamespaces, "all-namespaces", "A", podOptions.AllNamespaces, "If present, list the requested object(s) across all namespaces. Namespace in current context is ignored even if specified with --namespace.")
-	podOptions.configFlags.AddFlags(cmd.Flags())
+	cmd.Flags().BoolVarP(&o.AllNamespaces, "all-namespaces", "A", o.AllNamespaces, "If present, list the requested object(s) across all namespaces. Namespace in current context is ignored even if specified with --namespace.")
+
+	o.CommonOptions.AddCommonFlag(cmd)
 
 	return cmd
 }
 
-func (o *CraneOptionsPod) Validate() error {
-	if err := o.CraneOptions.Validate(); err != nil {
+func (o *CranePodOptions) Validate() error {
+	if err := o.CommonOptions.Validate(); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (o *CraneOptionsPod) Complete(cmd *cobra.Command, args []string) error {
-	if err := o.CraneOptions.Complete(cmd, args); err != nil {
+func (o *CranePodOptions) Complete(cmd *cobra.Command, args []string) error {
+	if err := o.CommonOptions.Complete(cmd, args); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (o *CraneOptionsPod) Run() error {
-	kubeClient, err := kubernetes.NewForConfig(o.restConfig)
-	if err != nil {
-		klog.Errorf("Failed to new kubernetes client, %v.", err)
-		return err
-	}
-
-	craneClient, err := craneclientset.NewForConfig(o.restConfig)
-	if err != nil {
-		klog.Errorf("Failed to new crane client, %v.", err)
-		return err
-	}
-
+func (o *CranePodOptions) Run() error {
 	namespace := "default"
-	if len(*o.configFlags.Namespace) > 0 {
-		namespace = *o.configFlags.Namespace
+	if len(*o.CommonOptions.ConfigFlags.Namespace) > 0 {
+		namespace = *o.CommonOptions.ConfigFlags.Namespace
 	}
 
 	if o.AllNamespaces {
 		namespace = ""
 	}
 
-	podList, err := kubeClient.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{})
+	podList, err := o.CommonOptions.KubeClient.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		klog.Errorf("Failed to get pods, %v.", err)
 		return err
 	}
 
-	recommendList, err := craneClient.AnalysisV1alpha1().Recommendations("").List(context.TODO(), metav1.ListOptions{})
+	recommendList, err := o.CommonOptions.CraneClient.AnalysisV1alpha1().Recommendations("").List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		klog.Errorf("Failed to get recommends, %v.", err)
 		return err
@@ -110,7 +100,7 @@ func (o *CraneOptionsPod) Run() error {
 
 	t := table.NewWriter()
 	t.SetStyle(table.StyleLight)
-	t.SetOutputMirror(o.Out)
+	t.SetOutputMirror(o.CommonOptions.Out)
 	header := table.Row{}
 	if o.AllNamespaces {
 		header = append(header, "NAMESPACE")
@@ -173,7 +163,7 @@ func (o *CraneOptionsPod) Run() error {
 
 			recCpu := resource.NewQuantity(0, resource.DecimalSI)
 			recMemory := resource.NewQuantity(0, resource.BinarySI)
-			if resourceRecommendation != nil && resourceRecommendation != nil {
+			if resourceRecommendation != nil {
 				for _, recContainer := range resourceRecommendation.Containers {
 					if recContainer.ContainerName == container.Name {
 						recCpuResource, err := resource.ParseQuantity(recContainer.Target[corev1.ResourceCPU])

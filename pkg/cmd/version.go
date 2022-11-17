@@ -21,7 +21,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func newCmdVersion() *cobra.Command {
+func NewCmdVersion() *cobra.Command {
 	// flags
 	var (
 		fFull bool

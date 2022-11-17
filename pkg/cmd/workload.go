@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"github.com/gocrane/kubectl-crane/pkg/cmd/options"
 	"strings"
 
 	"github.com/jedib0t/go-pretty/v6/table"
@@ -10,12 +11,9 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/cli-runtime/pkg/genericclioptions"
-	"k8s.io/client-go/kubernetes"
 	"k8s.io/klog/v2"
 
 	analysisv1alph1 "github.com/gocrane/api/analysis/v1alpha1"
-	craneclientset "github.com/gocrane/api/pkg/generated/clientset/versioned"
 )
 
 type WorkloadMeta struct {
@@ -23,29 +21,32 @@ type WorkloadMeta struct {
 	Kind       string
 }
 
-type CraneOptionsWorkload struct {
-	CraneOptions
+type CraneWorkloadOptions struct {
+	CommonOptions *options.CommonOptions
 	AllNamespaces bool
 }
 
-func newCmdCraneWorkload(streams genericclioptions.IOStreams) *cobra.Command {
-	craneOptions := NewCraneOptions(streams)
-	workloadOptions := &CraneOptionsWorkload{
-		CraneOptions: *craneOptions,
+func NewCraneWorkloadOptions() *CraneWorkloadOptions {
+	return &CraneWorkloadOptions{
+		CommonOptions: options.NewCommonOptions(),
 	}
+}
+
+func NewCmdCraneWorkload() *cobra.Command {
+	o := NewCraneWorkloadOptions()
 
 	cmd := &cobra.Command{
 		Use:   "workload",
 		Short: "view workload resource/replicas/hpa recommendations",
 		RunE: func(c *cobra.Command, args []string) error {
-			if err := workloadOptions.Complete(c, args); err != nil {
+			if err := o.Complete(c, args); err != nil {
 				return err
 			}
-			if err := workloadOptions.Validate(); err != nil {
+			if err := o.Validate(); err != nil {
 				return err
 			}
 
-			if err := workloadOptions.Run(); err != nil {
+			if err := o.Run(); err != nil {
 				return err
 			}
 
@@ -53,51 +54,39 @@ func newCmdCraneWorkload(streams genericclioptions.IOStreams) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().BoolVarP(&workloadOptions.AllNamespaces, "all-namespaces", "A", workloadOptions.AllNamespaces, "If present, list the requested object(s) across all namespaces. Namespace in current context is ignored even if specified with --namespace.")
-	workloadOptions.configFlags.AddFlags(cmd.Flags())
+	cmd.Flags().BoolVarP(&o.AllNamespaces, "all-namespaces", "A", o.AllNamespaces, "If present, list the requested object(s) across all namespaces. Namespace in current context is ignored even if specified with --namespace.")
+	o.CommonOptions.AddCommonFlag(cmd)
 
 	return cmd
 }
 
-func (o *CraneOptionsWorkload) Validate() error {
-	if err := o.CraneOptions.Validate(); err != nil {
+func (o *CraneWorkloadOptions) Validate() error {
+	if err := o.CommonOptions.Validate(); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (o *CraneOptionsWorkload) Complete(cmd *cobra.Command, args []string) error {
-	if err := o.CraneOptions.Complete(cmd, args); err != nil {
+func (o *CraneWorkloadOptions) Complete(cmd *cobra.Command, args []string) error {
+	if err := o.CommonOptions.Complete(cmd, args); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (o *CraneOptionsWorkload) Run() error {
-	kubeClient, err := kubernetes.NewForConfig(o.restConfig)
-	if err != nil {
-		klog.Errorf("Failed to new kubernetes client, %v.", err)
-		return err
-	}
-
-	craneClient, err := craneclientset.NewForConfig(o.restConfig)
-	if err != nil {
-		klog.Errorf("Failed to new crane client, %v.", err)
-		return err
-	}
-
+func (o *CraneWorkloadOptions) Run() error {
 	namespace := "default"
-	if len(*o.configFlags.Namespace) > 0 {
-		namespace = *o.configFlags.Namespace
+	if len(*o.CommonOptions.ConfigFlags.Namespace) > 0 {
+		namespace = *o.CommonOptions.ConfigFlags.Namespace
 	}
 
 	if o.AllNamespaces {
 		namespace = ""
 	}
 
-	deploymentList, err := kubeClient.AppsV1().Deployments(namespace).List(context.TODO(), metav1.ListOptions{})
+	deploymentList, err := o.CommonOptions.KubeClient.AppsV1().Deployments(namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		klog.Errorf("Failed to get deployments, %v.", err)
 		return err
@@ -109,7 +98,7 @@ func (o *CraneOptionsWorkload) Run() error {
 			return err
 		}*/
 
-	recommendList, err := craneClient.AnalysisV1alpha1().Recommendations("").List(context.TODO(), metav1.ListOptions{})
+	recommendList, err := o.CommonOptions.CraneClient.AnalysisV1alpha1().Recommendations("").List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		klog.Errorf("Failed to get recommends, %v.", err)
 		return err
@@ -120,7 +109,7 @@ func (o *CraneOptionsWorkload) Run() error {
 		recommendMap[GetObjectRefKey(string(recommend.Spec.Type), recommend.Spec.TargetRef)] = recommend
 	}
 
-	analyticsList, err := craneClient.AnalysisV1alpha1().Analytics("").List(context.TODO(), metav1.ListOptions{})
+	analyticsList, err := o.CommonOptions.CraneClient.AnalysisV1alpha1().Analytics("").List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		klog.Errorf("Failed to get analytics, %v.", err)
 		return err
@@ -142,7 +131,7 @@ func (o *CraneOptionsWorkload) Run() error {
 
 	t := table.NewWriter()
 	t.SetStyle(table.StyleLight)
-	t.SetOutputMirror(o.Out)
+	t.SetOutputMirror(o.CommonOptions.Out)
 	header := table.Row{}
 	if o.AllNamespaces {
 		header = append(header, "NAMESPACE")
