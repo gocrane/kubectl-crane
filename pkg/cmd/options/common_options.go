@@ -1,6 +1,11 @@
 package options
 
 import (
+	"os"
+
+	"k8s.io/client-go/discovery"
+	"k8s.io/client-go/dynamic"
+
 	crane "github.com/gocrane/api/pkg/generated/clientset/versioned"
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -8,7 +13,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/klog/v2"
-	"os"
 )
 
 // CommonOptions provides information required to update
@@ -20,8 +24,10 @@ type CommonOptions struct {
 	RestConfig *rest.Config
 	RestMapper meta.RESTMapper
 
-	KubeClient  *kubernetes.Clientset
-	CraneClient *crane.Clientset
+	KubeClient      *kubernetes.Clientset
+	CraneClient     *crane.Clientset
+	DynamicClient   dynamic.Interface
+	DiscoveryClient discovery.DiscoveryInterface
 }
 
 var defaultConfigFlags = genericclioptions.NewConfigFlags(true)
@@ -54,6 +60,17 @@ func (o *CommonOptions) Complete(cmd *cobra.Command, args []string) error {
 	o.CraneClient, err = crane.NewForConfig(o.RestConfig)
 	if err != nil {
 		klog.Errorf("Failed to new crane client, %v.", err)
+		return err
+	}
+
+	o.DynamicClient, err = dynamic.NewForConfig(o.RestConfig)
+	if err != nil {
+		klog.Errorf("Failed to new dynamic client, %v.", err)
+		return err
+	}
+	o.DiscoveryClient, err = discovery.NewDiscoveryClientForConfig(o.RestConfig)
+	if err != nil {
+		klog.Errorf("Failed to new discovery client, %v.", err)
 		return err
 	}
 

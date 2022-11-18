@@ -5,17 +5,20 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"strconv"
+	"strings"
+
+	"github.com/gocrane/kubectl-crane/pkg/utils"
+
 	analysisv1alph1 "github.com/gocrane/api/analysis/v1alpha1"
 	"github.com/gocrane/kubectl-crane/pkg/cmd/options"
-	"github.com/gocrane/kubectl-crane/pkg/util"
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/jedib0t/go-pretty/v6/text"
 	"github.com/spf13/cobra"
 	v1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog/v2"
-	"strconv"
-	"strings"
 )
 
 var (
@@ -96,9 +99,9 @@ func (o *RecommendListOptions) Complete(cmd *cobra.Command, args []string) error
 }
 
 func (o *RecommendListOptions) Run() error {
-	query := util.NewQuery()
+	query := utils.NewQuery()
 	if len(o.Name) > 0 {
-		query.Filters[util.FieldName] = util.Value(o.Name)
+		query.Filters[utils.FieldName] = utils.Value(o.Name)
 	}
 
 	namespace := ""
@@ -116,7 +119,7 @@ func (o *RecommendListOptions) Run() error {
 	for _, recommendation := range recommendResult.Items {
 		selected := true
 		for field, value := range query.Filters {
-			if !util.ObjectMetaFilter(recommendation.ObjectMeta, util.Filter{Field: field, Value: value}) {
+			if !utils.ObjectMetaFilter(recommendation.ObjectMeta, utils.Filter{Field: field, Value: value}) {
 				selected = false
 				break
 			}
@@ -135,15 +138,15 @@ func (o *RecommendListOptions) Run() error {
 		}
 	}
 
-	o.renderTable(recommendations)
+	RenderTable(recommendations, o.CommonOptions.Out)
 
 	return nil
 }
 
-func (o *RecommendListOptions) renderTable(recommendations []analysisv1alph1.Recommendation) {
+func RenderTable(recommendations []analysisv1alph1.Recommendation, out io.Writer) {
 	t := table.NewWriter()
 	t.SetStyle(table.StyleLight)
-	t.SetOutputMirror(o.CommonOptions.Out)
+	t.SetOutputMirror(out)
 	header := table.Row{}
 	header = append(header, table.Row{"NAME", "RECOMMEND SOURCE", "NAMESPACE", "TARGET", "CURRENT RESOURCE", "RECOMMEND RESOURCE", "CREATED TIME", "UPDATED TIME"}...)
 	t.AppendHeader(header)

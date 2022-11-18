@@ -2,9 +2,14 @@ package recommend
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
+
 	"github.com/gocrane/kubectl-crane/pkg/cmd/options"
+	"github.com/gocrane/kubectl-crane/pkg/utils"
+
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -17,7 +22,7 @@ var (
 %[1]s recommend adopt --name workloads-rule-resource-ntzns
 
 # pre-commit
-%[1]s recommend adopt --name workloads-rule-resource-ntzns --dryRun=All
+%[1]s recommend adopt --name workloads-rule-resource-ntzns --dry-run=All
 `
 )
 
@@ -38,7 +43,7 @@ func NewCmdRecommendAdopt() *cobra.Command {
 	o := NewRecommendAdoptOptions()
 
 	command := &cobra.Command{
-		Use:     "list",
+		Use:     "adopt",
 		Short:   "Adopt a recommend to resource",
 		Example: fmt.Sprintf(recommendListExample, "kubectl-crane"),
 		RunE: func(c *cobra.Command, args []string) error {
@@ -59,6 +64,7 @@ func NewCmdRecommendAdopt() *cobra.Command {
 	}
 
 	o.AddFlags(command)
+	o.CommonOptions.AddCommonFlag(command)
 
 	return command
 }
@@ -84,21 +90,38 @@ func (o *RecommendAdoptOptions) Complete(cmd *cobra.Command, args []string) erro
 }
 
 func (o *RecommendAdoptOptions) Run() error {
-	recommend, err := o.CommonOptions.CraneClient.AnalysisV1alpha1().Recommendations("").Get(context.TODO(), o.Name, metav1.GetOptions{})
+	recommend, err := o.CommonOptions.CraneClient.AnalysisV1alpha1().Recommendations(*o.CommonOptions.ConfigFlags.Namespace).Get(context.TODO(), o.Name, metav1.GetOptions{})
 	if err != nil {
 		return errors.New("the recommend doesn't exist, please specify a existed recommend name with --name")
 	}
 
-	patchOptions := metav1.PatchOptions{}
-	if len(o.DryRun) != 0 {
-		patchOptions.DryRun = []string{"All"}
-	}
+	if string(recommend.Spec.Type) == "Replicas" ||
+		string(recommend.Spec.Type) == "Resource" {
+		gvr, err := utils.GetGroupVersionResource(o.CommonOptions.DiscoveryClient, recommend.Spec.TargetRef.APIVersion, recommend.Spec.TargetRef.Kind)
+		if err != nil {
+			return errors.New(fmt.Sprintf("Recommendation type %s is not supported for adoption ", string(recommend.Spec.Type)))
+		}
 
-	if recommend.Spec.TargetRef.Kind == "Deployment" {
-		if _, err = o.CommonOptions.KubeClient.AppsV1().Deployments(recommend.Spec.TargetRef.Namespace).
-			Patch(context.TODO(), recommend.Spec.TargetRef.Name, types.JSONPatchType, []byte(recommend.Status.RecommendedInfo), patchOptions); err != nil {
+		patchOptions := metav1.PatchOptions{}
+		if len(o.DryRun) != 0 {
+			patchOptions.DryRun = []string{"All"}
+		}
+
+		patched, err := o.CommonOptions.DynamicClient.Resource(*gvr).Namespace(recommend.Spec.TargetRef.Namespace).Patch(context.TODO(), recommend.Spec.TargetRef.Name, types.StrategicMergePatchType, []byte(recommend.Status.RecommendedInfo), patchOptions)
+		if err != nil {
 			return errors.New(fmt.Sprintf("adopt the recommend failed because %v", err))
 		}
+
+		if len(o.DryRun) != 0 {
+			detailsJSON, err := json.MarshalIndent(patched, "", "    ")
+			if err != nil {
+				log.Fatalf("failed marshalling details to JSON : %+v", err)
+			}
+			fmt.Println(string(detailsJSON))
+		}
+
+	} else {
+		return errors.New(fmt.Sprintf("Recommendation type %s is not supported for adoption ", string(recommend.Spec.Type)))
 	}
 
 	return nil
@@ -106,5 +129,5 @@ func (o *RecommendAdoptOptions) Run() error {
 
 func (o *RecommendAdoptOptions) AddFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&o.Name, "name", "", "", "Specify the name for recommend")
-	cmd.Flags().StringVarP(&o.DryRun, "dryRun", "", "", "Pre-commit")
+	cmd.Flags().StringVarP(&o.DryRun, "dry-run", "", "", "Pre-commit")
 }

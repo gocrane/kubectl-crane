@@ -5,17 +5,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"reflect"
+
 	analysisv1alph1 "github.com/gocrane/api/analysis/v1alpha1"
 	"github.com/gocrane/kubectl-crane/pkg/cmd/options"
-	"github.com/jedib0t/go-pretty/v6/table"
-	"github.com/jedib0t/go-pretty/v6/text"
+	"github.com/gocrane/kubectl-crane/pkg/cmd/recommend"
 	"github.com/spf13/cobra"
-	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog/v2"
-	"reflect"
-	"strconv"
 )
 
 var (
@@ -106,81 +104,9 @@ func (o *ViewRecommendOptions) Run() error {
 		}
 	}
 
-	o.renderTable(recommendations)
+	recommend.RenderTable(recommendations, o.CommonOptions.Out)
 
 	return nil
-}
-
-func (o *ViewRecommendOptions) renderTable(recommendations []analysisv1alph1.Recommendation) {
-	t := table.NewWriter()
-	t.SetStyle(table.StyleLight)
-	t.SetOutputMirror(o.CommonOptions.Out)
-	header := table.Row{}
-	header = append(header, table.Row{"NAME", "RECOMMEND SOURCE", "NAMESPACE", "TARGET", "CURRENT RESOURCE", "RECOMMEND RESOURCE", "CREATED TIME", "UPDATED TIME"}...)
-	t.AppendHeader(header)
-	t.SetColumnConfigs([]table.ColumnConfig{
-		{
-			Name:        "NAME",
-			Align:       text.AlignLeft,
-			AlignFooter: text.AlignLeft,
-			AlignHeader: text.AlignLeft,
-			VAlign:      text.VAlignMiddle,
-			WidthMin:    6,
-			WidthMax:    24,
-		},
-	})
-
-	for _, recommendation := range recommendations {
-		row := table.Row{}
-
-		row = append(row, recommendation.Name)
-		row = append(row, recommendation.Spec.TargetRef.Name)
-		row = append(row, recommendation.Namespace)
-		row = append(row, recommendation.Spec.TargetRef.Kind)
-
-		currentInfo := v1.Deployment{}
-		if err := json.Unmarshal([]byte(recommendation.Status.RecommendationContent.CurrentInfo), &currentInfo); err != nil {
-			row = append(row, "")
-		} else {
-			currentResource := ""
-			if recommendation.Spec.Type == "Resource" {
-				for _, container := range currentInfo.Spec.Template.Spec.Containers {
-					currentResource += container.Name + "/" + container.Resources.Requests.Cpu().String() + "m/" + container.Resources.Requests.Memory().String() + "\n"
-				}
-			} else if recommendation.Spec.Type == "Replicas" {
-				currentResource += strconv.Itoa(int(*currentInfo.Spec.Replicas))
-			}
-
-			row = append(row, currentResource)
-		}
-
-		recommendInfo := v1.Deployment{}
-		if err := json.Unmarshal([]byte(recommendation.Status.RecommendationContent.RecommendedInfo), &recommendInfo); err != nil {
-			row = append(row, "")
-		} else {
-			recommendResource := ""
-			if recommendation.Spec.Type == "Resource" {
-				for _, container := range recommendInfo.Spec.Template.Spec.Containers {
-					recommendResource += container.Name + "/" + container.Resources.Requests.Cpu().String() + "/" + container.Resources.Requests.Memory().String() + "\n"
-				}
-			} else if recommendation.Spec.Type == "Replicas" {
-				recommendResource += strconv.Itoa(int(*recommendInfo.Spec.Replicas))
-			}
-
-			row = append(row, recommendResource)
-		}
-
-		row = append(row, recommendation.CreationTimestamp)
-		row = append(row, recommendation.Status.LastUpdateTime)
-
-		t.AppendRows([]table.Row{
-			row,
-		})
-
-		t.AppendSeparator()
-	}
-
-	t.Render()
 }
 
 func (o *ViewRecommendOptions) AddFlags(cmd *cobra.Command) {

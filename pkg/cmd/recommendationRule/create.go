@@ -5,13 +5,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/gocrane/api/analysis/v1alpha1"
 	"github.com/gocrane/kubectl-crane/pkg/cmd/options"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog/v2"
-	"strings"
-	"time"
 )
 
 var (
@@ -23,7 +24,7 @@ var (
 %[1]s rr create --target '[{"kind": "Deployment", "apiVersion": "apps/v1"}]' --runInterval 4h
 
 # pre-commit
-%[1]s rr create --target '[{"kind": "Deployment", "apiVersion": "apps/v1"}]' --runInterval 4h --dryRun=All
+%[1]s rr create --target '[{"kind": "Deployment", "apiVersion": "apps/v1"}]' --runInterval 4h --dry-run=All
 
 # create a simple recommendation rule for all namespace with Any and Resource\Replicas recommender
 %[1]s rr create --namespace Any --recommender Resource,Replicas --target '[{"kind": "Deployment", "apiVersion": "apps/v1"}]' --runInterval 4h
@@ -156,6 +157,6 @@ func (o *RecommendationRuleCreateOptions) Run() error {
 func (o *RecommendationRuleCreateOptions) AddFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&o.Recommender, "recommender", "", "Resource", "specify type for recommendationrules，separated with ',' if more than one, default is Resource")
 	cmd.Flags().StringVarP(&o.Target, "target", "", "", "specify recommend target for recommendationrules")
-	cmd.Flags().StringVarP(&o.RunInterval, "runInterval", "", "", "Specify runInterval for recommendationrules")
-	cmd.Flags().StringVarP(&o.DryRun, "dryRun", "", "", "pre-commit")
+	cmd.Flags().StringVarP(&o.RunInterval, "run-interval", "", "", "Specify runInterval for recommendationrules")
+	cmd.Flags().StringVarP(&o.DryRun, "dry-run", "", "", "pre-commit")
 }

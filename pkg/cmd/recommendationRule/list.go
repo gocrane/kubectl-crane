@@ -2,15 +2,16 @@ package recommendationRule
 
 import (
 	"context"
+	"strings"
+
 	analysisv1alph1 "github.com/gocrane/api/analysis/v1alpha1"
 	"github.com/gocrane/kubectl-crane/pkg/cmd/options"
-	"github.com/gocrane/kubectl-crane/pkg/util"
+	"github.com/gocrane/kubectl-crane/pkg/utils"
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/jedib0t/go-pretty/v6/text"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog/v2"
-	"strings"
 )
 
 type RecommendationRuleListOptions struct {
@@ -70,9 +71,9 @@ func (o *RecommendationRuleListOptions) Complete(cmd *cobra.Command, args []stri
 }
 
 func (o *RecommendationRuleListOptions) Run() error {
-	query := util.NewQuery()
+	query := utils.NewQuery()
 	if len(o.Name) > 0 {
-		query.Filters[util.FieldName] = util.Value(o.Name)
+		query.Filters[utils.FieldName] = utils.Value(o.Name)
 	}
 
 	recommendationRuleResult, err := o.CommonOptions.CraneClient.AnalysisV1alpha1().RecommendationRules("").List(context.TODO(), metav1.ListOptions{})
@@ -84,7 +85,7 @@ func (o *RecommendationRuleListOptions) Run() error {
 	for _, recommendationRule := range recommendationRuleResult.Items {
 		selected := true
 		for field, value := range query.Filters {
-			if !util.ObjectMetaFilter(recommendationRule.ObjectMeta, util.Filter{Field: field, Value: value}) {
+			if !utils.ObjectMetaFilter(recommendationRule.ObjectMeta, utils.Filter{Field: field, Value: value}) {
 				selected = false
 				break
 			}
