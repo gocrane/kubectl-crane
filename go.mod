@@ -3,7 +3,8 @@ module github.com/gocrane/kubectl-crane
 go 1.17
 
 require (
-	github.com/gocrane/api v0.8.0
+	github.com/gocrane/api v0.8.1-0.20221209032014-9aa55332b033
+	github.com/gocrane/crane v0.8.0
 	github.com/jedib0t/go-pretty/v6 v6.3.2
 	github.com/kolide/kit v0.0.0-20210803163830-e689ca24537d
 	github.com/spf13/cobra v1.4.0
@@ -29,7 +30,6 @@ require (
 	github.com/emicklei/go-restful v2.15.0+incompatible // indirect
 	github.com/evanphx/json-patch v4.12.0+incompatible // indirect
 	github.com/form3tech-oss/jwt-go v3.2.3+incompatible // indirect
-	github.com/fsnotify/fsnotify v1.5.1 // indirect
 	github.com/go-errors/errors v1.0.1 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
 	github.com/go-openapi/jsonpointer v0.19.5 // indirect

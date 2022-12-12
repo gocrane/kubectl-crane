@@ -2,31 +2,32 @@ package cmd
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"reflect"
 
-	analysisv1alph1 "github.com/gocrane/api/analysis/v1alpha1"
-	"github.com/gocrane/kubectl-crane/pkg/cmd/options"
-	"github.com/gocrane/kubectl-crane/pkg/cmd/recommend"
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog/v2"
+
+	analysisv1alph1 "github.com/gocrane/api/analysis/v1alpha1"
+	"github.com/gocrane/kubectl-crane/pkg/cmd/options"
+	"github.com/gocrane/kubectl-crane/pkg/cmd/recommend"
 )
 
 var (
 	viewRecommendExample = `
 # view all recommend result with kube-system namespace
-%[1]s view-recommend --sourceSelector '{"apiVersion":"","kind": "", "name": "", "namespace":""}'
+%[1]s view-recommend --api-version v1 --kind Deployment -n {namespace} {name}
 `
 )
 
 type ViewRecommendOptions struct {
 	CommonOptions *options.CommonOptions
 
-	Selector string
+	APIVersion string
+	Kind       string
 
 	ResourceSelector corev1.ObjectReference
 }
@@ -48,7 +49,7 @@ func NewCmdViewRecommend() *cobra.Command {
 			if err := o.Complete(c, args); err != nil {
 				return err
 			}
-			if err := o.Validate(); err != nil {
+			if err := o.Validate(args); err != nil {
 				klog.Infof(fmt.Sprintf("\nExample:\n"+viewRecommendExample, "kubectl-crane"))
 				return err
 			}
@@ -65,14 +66,13 @@ func NewCmdViewRecommend() *cobra.Command {
 	return command
 }
 
-func (o *ViewRecommendOptions) Validate() error {
+func (o *ViewRecommendOptions) Validate(args []string) error {
 	if err := o.CommonOptions.Validate(); err != nil {
 		return err
 	}
 
-	err := json.Unmarshal([]byte(o.Selector), &o.ResourceSelector)
-	if err != nil {
-		return errors.New("please check the recommender target is valid")
+	if o.APIVersion == "" || o.Kind == "" || o.CommonOptions.ConfigFlags.Namespace == nil || len(args) == 0 {
+		return errors.New("the recommender target is valid, please follow the guide `kubectl-crane view-recommend --api-version v1 --kind Deployment -n {namespace} {name}`")
 	}
 
 	return nil
@@ -83,11 +83,18 @@ func (o *ViewRecommendOptions) Complete(cmd *cobra.Command, args []string) error
 		return err
 	}
 
+	o.ResourceSelector = corev1.ObjectReference{
+		APIVersion: o.APIVersion,
+		Kind:       o.Kind,
+		Namespace:  *o.CommonOptions.ConfigFlags.Namespace,
+		Name:       args[0],
+	}
+
 	return nil
 }
 
 func (o *ViewRecommendOptions) Run() error {
-	recommendResult, err := o.CommonOptions.CraneClient.AnalysisV1alpha1().Recommendations(o.ResourceSelector.Namespace).List(context.TODO(), metav1.ListOptions{})
+	recommendResult, err := o.CommonOptions.CraneClient.AnalysisV1alpha1().Recommendations(*o.CommonOptions.ConfigFlags.Namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		klog.Errorf("Failed to get recommend result, %v.", err)
 		return err
@@ -110,5 +117,6 @@ func (o *ViewRecommendOptions) Run() error {
 }
 
 func (o *ViewRecommendOptions) AddFlags(cmd *cobra.Command) {
-	cmd.Flags().StringVarP(&o.Selector, "selector", "", "", "Specify source selector")
+	cmd.Flags().StringVarP(&o.APIVersion, "api-version", "", "", "Specify source api-version")
+	cmd.Flags().StringVarP(&o.Kind, "kind", "", "", "Specify source kind")
 }

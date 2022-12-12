@@ -7,18 +7,19 @@ import (
 	"fmt"
 	"io"
 	"strconv"
-	"strings"
 
-	"github.com/gocrane/kubectl-crane/pkg/utils"
-
-	analysisv1alph1 "github.com/gocrane/api/analysis/v1alpha1"
-	"github.com/gocrane/kubectl-crane/pkg/cmd/options"
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/jedib0t/go-pretty/v6/text"
 	"github.com/spf13/cobra"
 	v1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog/v2"
+
+	analysisv1alpha1 "github.com/gocrane/api/analysis/v1alpha1"
+
+	"github.com/gocrane/crane/pkg/known"
+	"github.com/gocrane/kubectl-crane/pkg/cmd/options"
+	"github.com/gocrane/kubectl-crane/pkg/utils"
 )
 
 var (
@@ -30,7 +31,7 @@ var (
 %[1]s recommend list --namespace kube-system --type Resource
 `
 
-	recommenderMap = map[string]int{"Replicas": 1, "Resource": 2, "IdleNode": 3}
+	recommenderMap = map[string]int{analysisv1alpha1.ReplicasRecommender: 1, analysisv1alpha1.ResourceRecommender: 2, analysisv1alpha1.IdleNodeRecommender: 3}
 )
 
 type RecommendListOptions struct {
@@ -104,32 +105,42 @@ func (o *RecommendListOptions) Run() error {
 		query.Filters[utils.FieldName] = utils.Value(o.Name)
 	}
 
+	if len(o.Type) > 0 {
+		query.LabelSelector[known.RecommendationRuleRecommenderLabel] = o.Type
+	}
+
+	if len(o.TargetKind) > 0 {
+		query.LabelSelector[known.RecommendationRuleTargetKindLabel] = o.TargetKind
+	}
+
 	namespace := ""
 	if len(*o.CommonOptions.ConfigFlags.Namespace) > 0 {
 		namespace = *o.CommonOptions.ConfigFlags.Namespace
-		//query.Filters[util.FieldNamespace] = util.Value(*o.CommonOptions.ConfigFlags.Namespace)
 	}
 
-	recommendResult, err := o.CommonOptions.CraneClient.AnalysisV1alpha1().Recommendations(namespace).List(context.TODO(), metav1.ListOptions{})
+	selector := ""
+	for label, value := range query.LabelSelector {
+		selector += label + "=" + value + ","
+	}
+	// remove the last ","
+	if len(selector) > 0 {
+		selector = selector[:len(selector)-1]
+	}
+	listOptions := metav1.ListOptions{
+		LabelSelector: selector,
+	}
+	recommendResult, err := o.CommonOptions.CraneClient.AnalysisV1alpha1().Recommendations(namespace).List(context.TODO(), listOptions)
 	if err != nil {
 		klog.Errorf("Failed to get recommend result, %v.", err)
 		return err
 	}
-	var recommendations []analysisv1alph1.Recommendation
+	var recommendations []analysisv1alpha1.Recommendation
 	for _, recommendation := range recommendResult.Items {
 		selected := true
 		for field, value := range query.Filters {
 			if !utils.ObjectMetaFilter(recommendation.ObjectMeta, utils.Filter{Field: field, Value: value}) {
 				selected = false
 				break
-			}
-		}
-		if selected {
-			if len(o.Type) > 0 && !strings.EqualFold(string(recommendation.Spec.Type), o.Type) {
-				selected = false
-			}
-			if len(o.TargetKind) > 0 && !strings.EqualFold(recommendation.Spec.TargetRef.Kind, o.TargetKind) {
-				selected = false
 			}
 		}
 
@@ -143,7 +154,7 @@ func (o *RecommendListOptions) Run() error {
 	return nil
 }
 
-func RenderTable(recommendations []analysisv1alph1.Recommendation, out io.Writer) {
+func RenderTable(recommendations []analysisv1alpha1.Recommendation, out io.Writer) {
 	t := table.NewWriter()
 	t.SetStyle(table.StyleLight)
 	t.SetOutputMirror(out)
@@ -216,7 +227,7 @@ func RenderTable(recommendations []analysisv1alph1.Recommendation, out io.Writer
 }
 
 func (o *RecommendListOptions) AddFlags(cmd *cobra.Command) {
-	cmd.Flags().StringVarP(&o.Type, "type", "", "", "Specify the type for recommend[Resource, Replicas, IdleNode]")
+	cmd.Flags().StringVarP(&o.Type, "type", "", "Resource", "Specify the type for recommend[Resource, Replicas, IdleNode]")
 	cmd.Flags().StringVarP(&o.Name, "name", "", "", "Specify the name for recommend")
 	cmd.Flags().StringVarP(&o.TargetKind, "targetKind", "", "", "Specify the target type for recommendationrules")
 }

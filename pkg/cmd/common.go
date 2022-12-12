@@ -12,19 +12,14 @@ import (
 	analysisv1alph1 "github.com/gocrane/api/analysis/v1alpha1"
 )
 
-const (
-	RecommendTypeReplicas = "Replicas"
-	RecommendTypeResource = "Resource"
-)
-
-func GetResourceRequestRecommendationsByPod(pod corev1.Pod, recommendMap map[string]analysisv1alph1.Recommendation) *ResourceRequestRecommendation {
+func GetResourceRequestRecommendationsByPod(pod corev1.Pod, recommendMap map[string]analysisv1alph1.Recommendation) *analysisv1alph1.ResourceRequestRecommendation {
 	for _, ref := range pod.OwnerReferences {
-		key := GetOwnerKey(RecommendTypeResource, ref, pod.Namespace)
+		key := GetOwnerKey(analysisv1alph1.ResourceRecommender, ref, pod.Namespace)
 		if recommend, exist := recommendMap[key]; exist {
 			if recommend.Status.RecommendedValue == "" {
 				continue
 			}
-			var proposedRecommendation ProposedRecommendation
+			var proposedRecommendation analysisv1alph1.ProposedRecommendation
 			err := yaml.Unmarshal([]byte(recommend.Status.RecommendedValue), &proposedRecommendation)
 			if err != nil {
 				return nil
@@ -37,22 +32,22 @@ func GetResourceRequestRecommendationsByPod(pod corev1.Pod, recommendMap map[str
 	return nil
 }
 
-func GetProposedRecommendationsByMeta(kind, apiVersion, namespace, name string, recommendMap map[string]analysisv1alph1.Recommendation) *ProposedRecommendation {
-	var recommendation ProposedRecommendation
+func GetProposedRecommendationsByMeta(kind, apiVersion, namespace, name string, recommendMap map[string]analysisv1alph1.Recommendation) *analysisv1alph1.ProposedRecommendation {
+	var recommendation analysisv1alph1.ProposedRecommendation
 
-	resourceKey := GetObjectKey(RecommendTypeResource, kind, apiVersion, namespace, name)
+	resourceKey := GetObjectKey(analysisv1alph1.ResourceRecommender, kind, apiVersion, namespace, name)
 
 	if recommend, exist := recommendMap[resourceKey]; exist {
-		var proposedRecommendation ProposedRecommendation
+		var proposedRecommendation analysisv1alph1.ProposedRecommendation
 		yaml.Unmarshal([]byte(recommend.Status.RecommendedValue), &proposedRecommendation)
 
 		recommendation.ResourceRequest = proposedRecommendation.ResourceRequest
 	}
 
-	replicasKey := GetObjectKey(RecommendTypeReplicas, kind, apiVersion, namespace, name)
+	replicasKey := GetObjectKey(analysisv1alph1.ReplicasRecommender, kind, apiVersion, namespace, name)
 
 	if recommend, exist := recommendMap[replicasKey]; exist {
-		var proposedRecommendation ProposedRecommendation
+		var proposedRecommendation analysisv1alph1.ProposedRecommendation
 		yaml.Unmarshal([]byte(recommend.Status.RecommendedValue), &proposedRecommendation)
 
 		recommendation.ReplicasRecommendation = proposedRecommendation.ReplicasRecommendation

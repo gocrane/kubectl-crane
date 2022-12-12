@@ -3,8 +3,6 @@ package cmd
 import (
 	"context"
 
-	"github.com/gocrane/kubectl-crane/pkg/cmd/options"
-
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/jedib0t/go-pretty/v6/text"
 	"github.com/spf13/cobra"
@@ -14,6 +12,7 @@ import (
 	"k8s.io/klog/v2"
 
 	analysisv1alph1 "github.com/gocrane/api/analysis/v1alpha1"
+	"github.com/gocrane/kubectl-crane/pkg/cmd/options"
 )
 
 type CranePodOptions struct {

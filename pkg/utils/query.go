@@ -18,7 +18,7 @@ const (
 type Query struct {
 	Filters map[Field]Value
 
-	LabelSelector string
+	LabelSelector map[string]string
 }
 
 type Filter struct {
@@ -28,7 +28,8 @@ type Filter struct {
 
 func NewQuery() *Query {
 	return &Query{
-		Filters: map[Field]Value{},
+		Filters:       map[Field]Value{},
+		LabelSelector: map[string]string{},
 	}
 }
 

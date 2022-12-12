@@ -1,9 +1,10 @@
 package cmd
 
 import (
+	"github.com/spf13/cobra"
+
 	"github.com/gocrane/kubectl-crane/pkg/cmd/options"
 	"github.com/gocrane/kubectl-crane/pkg/cmd/recommend"
-	"github.com/spf13/cobra"
 )
 
 type RecommendOptions struct {

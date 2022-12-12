@@ -8,26 +8,30 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gocrane/api/analysis/v1alpha1"
-	"github.com/gocrane/kubectl-crane/pkg/cmd/options"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/cli-runtime/pkg/printers"
+	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/klog/v2"
+
+	"github.com/gocrane/api/analysis/v1alpha1"
+
+	"github.com/gocrane/kubectl-crane/pkg/cmd/options"
 )
 
 var (
 	recommendationRuleCreateExample = `
 # create a simple recommendation rule for kube-system namespace
-%[1]s rr create --namespace kube-system --target '[{"kind": "Deployment", "apiVersion": "apps/v1"}]' --runInterval 4h
+%[1]s rr create --namespace kube-system --target '[{"kind": "Deployment", "apiVersion": "apps/v1"}]' --run-interval 4h
 
 # create a simple recommendation rule for all namespace
-%[1]s rr create --target '[{"kind": "Deployment", "apiVersion": "apps/v1"}]' --runInterval 4h
+%[1]s rr create --target '[{"kind": "Deployment", "apiVersion": "apps/v1"}]' --run-interval 4h
 
 # pre-commit
-%[1]s rr create --target '[{"kind": "Deployment", "apiVersion": "apps/v1"}]' --runInterval 4h --dry-run=All
+%[1]s rr create --target '[{"kind": "Deployment", "apiVersion": "apps/v1"}]' --run-interval 4h --dry-run=All
 
 # create a simple recommendation rule for all namespace with Any and Resource\Replicas recommender
-%[1]s rr create --namespace Any --recommender Resource,Replicas --target '[{"kind": "Deployment", "apiVersion": "apps/v1"}]' --runInterval 4h
+%[1]s rr create --namespace Any --recommender Resource,Replicas --target '[{"kind": "Deployment", "apiVersion": "apps/v1"}]' --run-interval 4h
 `
 
 	recommenderMap = map[string]int{"Replicas": 1, "Resource": 2, "IdleNode": 3}
@@ -112,7 +116,12 @@ func (o *RecommendationRuleCreateOptions) Complete(cmd *cobra.Command, args []st
 }
 
 func (o *RecommendationRuleCreateOptions) Run() error {
-	recommendationRule := &v1alpha1.RecommendationRule{}
+	recommendationRule := &v1alpha1.RecommendationRule{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "RecommendationRule",
+			APIVersion: "analysis.crane.io/v1alpha1",
+		},
+	}
 	recommendationRule.Namespace = ""
 
 	name := "recommendation"
@@ -146,8 +155,16 @@ func (o *RecommendationRuleCreateOptions) Run() error {
 		createOptions.DryRun = []string{"All"}
 	}
 
-	if _, err := o.CommonOptions.CraneClient.AnalysisV1alpha1().RecommendationRules("default").Create(context.TODO(), recommendationRule, createOptions); err != nil {
-		return err
+	created, err := o.CommonOptions.CraneClient.AnalysisV1alpha1().RecommendationRules("default").Create(context.Background(), recommendationRule, createOptions)
+
+	// when dry-run set, print the object
+	if len(o.DryRun) != 0 {
+		created.Kind = "RecommendationRule"
+		created.APIVersion = "analysis.crane.io/v1alpha1"
+		printer := printers.NewTypeSetter(scheme.Scheme).ToPrinter(&printers.YAMLPrinter{})
+		if err = printer.PrintObj(created, o.CommonOptions.Out); err != nil {
+			return err
+		}
 	}
 
 	klog.Infof(fmt.Sprintf("the recommendation rule %s created successfully", name))

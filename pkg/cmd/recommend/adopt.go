@@ -2,18 +2,18 @@ package recommend
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
-
-	"github.com/gocrane/kubectl-crane/pkg/cmd/options"
-	"github.com/gocrane/kubectl-crane/pkg/utils"
 
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/cli-runtime/pkg/printers"
+	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/klog/v2"
+
+	"github.com/gocrane/kubectl-crane/pkg/cmd/options"
+	"github.com/gocrane/kubectl-crane/pkg/utils"
 )
 
 var (
@@ -75,7 +75,11 @@ func (o *RecommendAdoptOptions) Validate() error {
 	}
 
 	if len(o.Name) == 0 {
-		return errors.New("please specify a existed recommend name")
+		return errors.New("please specify the recommend name")
+	}
+
+	if len(*o.CommonOptions.ConfigFlags.Namespace) == 0 {
+		return errors.New("please specify the recommend namespace")
 	}
 
 	return nil
@@ -112,12 +116,12 @@ func (o *RecommendAdoptOptions) Run() error {
 			return errors.New(fmt.Sprintf("adopt the recommend failed because %v", err))
 		}
 
+		// when dry-run set, print the object
 		if len(o.DryRun) != 0 {
-			detailsJSON, err := json.MarshalIndent(patched, "", "    ")
-			if err != nil {
-				log.Fatalf("failed marshalling details to JSON : %+v", err)
+			printer := printers.NewTypeSetter(scheme.Scheme).ToPrinter(&printers.YAMLPrinter{})
+			if err = printer.PrintObj(patched, o.CommonOptions.Out); err != nil {
+				return err
 			}
-			fmt.Println(string(detailsJSON))
 		}
 
 	} else {
