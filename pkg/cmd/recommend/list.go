@@ -11,7 +11,6 @@ import (
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/jedib0t/go-pretty/v6/text"
 	"github.com/spf13/cobra"
-	v1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog/v2"
 
@@ -181,37 +180,44 @@ func RenderTable(recommendations []analysisv1alpha1.Recommendation, out io.Write
 		row = append(row, recommendation.Namespace)
 		row = append(row, recommendation.Spec.TargetRef.Kind)
 
-		currentInfo := v1.Deployment{}
-		if err := json.Unmarshal([]byte(recommendation.Status.RecommendationContent.CurrentInfo), &currentInfo); err != nil {
-			row = append(row, "")
-		} else {
-			currentResource := ""
-			if recommendation.Spec.Type == "Resource" {
+		currentResource := ""
+		recommendResource := ""
+		if recommendation.Spec.Type == "Resource" {
+			var currentInfo analysisv1alpha1.PatchResource
+			if err := json.Unmarshal([]byte(recommendation.Status.RecommendationContent.CurrentInfo), &currentInfo); err != nil {
+				row = append(row, "")
+			} else {
 				for _, container := range currentInfo.Spec.Template.Spec.Containers {
 					currentResource += container.Name + "/" + container.Resources.Requests.Cpu().String() + "m/" + container.Resources.Requests.Memory().String() + "\n"
 				}
-			} else if recommendation.Spec.Type == "Replicas" {
+			}
+
+			var recommendInfo analysisv1alpha1.PatchResource
+			if err := json.Unmarshal([]byte(recommendation.Status.RecommendationContent.RecommendedInfo), &recommendInfo); err != nil {
+				row = append(row, "")
+			} else {
+				for _, container := range recommendInfo.Spec.Template.Spec.Containers {
+					recommendResource += container.Name + "/" + container.Resources.Requests.Cpu().String() + "m/" + container.Resources.Requests.Memory().String() + "\n"
+				}
+			}
+		} else if recommendation.Spec.Type == "Replicas" {
+			var currentInfo analysisv1alpha1.PatchReplicas
+			if err := json.Unmarshal([]byte(recommendation.Status.RecommendationContent.CurrentInfo), &currentInfo); err != nil {
+				row = append(row, "")
+			} else {
 				currentResource += strconv.Itoa(int(*currentInfo.Spec.Replicas))
 			}
 
-			row = append(row, currentResource)
-		}
-
-		recommendInfo := v1.Deployment{}
-		if err := json.Unmarshal([]byte(recommendation.Status.RecommendationContent.RecommendedInfo), &recommendInfo); err != nil {
-			row = append(row, "")
-		} else {
-			recommendResource := ""
-			if recommendation.Spec.Type == "Resource" {
-				for _, container := range recommendInfo.Spec.Template.Spec.Containers {
-					recommendResource += container.Name + "/" + container.Resources.Requests.Cpu().String() + "/" + container.Resources.Requests.Memory().String() + "\n"
-				}
-			} else if recommendation.Spec.Type == "Replicas" {
+			var recommendInfo analysisv1alpha1.PatchReplicas
+			if err := json.Unmarshal([]byte(recommendation.Status.RecommendationContent.RecommendedInfo), &recommendInfo); err != nil {
+				row = append(row, "")
+			} else {
 				recommendResource += strconv.Itoa(int(*recommendInfo.Spec.Replicas))
 			}
-
-			row = append(row, recommendResource)
 		}
+
+		row = append(row, currentResource)
+		row = append(row, recommendResource)
 
 		row = append(row, recommendation.CreationTimestamp)
 		row = append(row, recommendation.Status.LastUpdateTime)
