@@ -128,24 +128,24 @@ func (o *RecommendationRuleCreateOptions) Run() error {
 
 	if len(*o.CommonOptions.ConfigFlags.Namespace) == 0 || strings.EqualFold(*o.CommonOptions.ConfigFlags.Namespace, "Any") {
 		recommendationRule.Spec.NamespaceSelector.Any = true
-		name += "-Any"
+		name += "-any"
 	} else {
 		recommendationRule.Spec.NamespaceSelector.MatchNames = strings.Split(*o.CommonOptions.ConfigFlags.Namespace, ",")
 	}
 
 	recommendationRule.Spec.ResourceSelectors = o.ResourceSelectors
-	name += "-" + o.ResourceSelectors[0].Kind
+	name += "-" + strings.ToLower(o.ResourceSelectors[0].Kind)
 
 	recommenders := strings.Split(o.Recommender, ",")
 	for _, recommender := range recommenders {
-		name += "-" + recommender
+		name += "-" + strings.ToLower(recommender)
 		recommendationRule.Spec.Recommenders = append(recommendationRule.Spec.Recommenders, v1alpha1.Recommender{
 			Name: recommender,
 		})
 	}
 
 	recommendationRule.Spec.RunInterval = o.RunInterval
-	name += "-" + o.RunInterval
+	name += "-" + strings.ToLower(o.RunInterval)
 	name += "-" + time.Now().Format("2006-01-02")
 
 	recommendationRule.Name = name
@@ -155,7 +155,10 @@ func (o *RecommendationRuleCreateOptions) Run() error {
 		createOptions.DryRun = []string{"All"}
 	}
 
-	created, err := o.CommonOptions.CraneClient.AnalysisV1alpha1().RecommendationRules("default").Create(context.Background(), recommendationRule, createOptions)
+	created, err := o.CommonOptions.CraneClient.AnalysisV1alpha1().RecommendationRules().Create(context.Background(), recommendationRule, createOptions)
+	if err != nil {
+		return err
+	}
 
 	// when dry-run set, print the object
 	if len(o.DryRun) != 0 {

@@ -77,7 +77,7 @@ func (o *RecommendationRuleListOptions) Run() error {
 		query.Filters[utils.FieldName] = utils.Value(o.Name)
 	}
 
-	recommendationRuleResult, err := o.CommonOptions.CraneClient.AnalysisV1alpha1().RecommendationRules("").List(context.TODO(), metav1.ListOptions{})
+	recommendationRuleResult, err := o.CommonOptions.CraneClient.AnalysisV1alpha1().RecommendationRules().List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		klog.Errorf("Failed to get recommendation rules, %v.", err)
 		return err

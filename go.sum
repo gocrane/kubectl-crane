@@ -290,8 +290,8 @@ github.com/gobwas/httphead v0.1.0/go.mod h1:O/RXo79gxV8G+RqlR/otEwx4Q36zl9rqC5u1
 github.com/gobwas/pool v0.2.1/go.mod h1:q8bcK0KcYlCgd9e7WYLm9LpyS+YeLd8JVDW6WezmKEw=
 github.com/gobwas/ws v1.1.0-rc.5/go.mod h1:nzvNcVha5eUziGrbxFCo6qFIojQHjJV5cLYIbezhfL0=
 github.com/gocrane/api v0.7.1-0.20220906050113-0f331eb419b0/go.mod h1:GxI+t9AW8+NsHkz2JkPBIJN//9eLUjTZl1ScYAbXMbk=
-github.com/gocrane/api v0.8.1-0.20221209032014-9aa55332b033 h1:fdGSzfEjD2lpWGYof4BFD6i1eHaXk6nVIZafQ2EdRAs=
-github.com/gocrane/api v0.8.1-0.20221209032014-9aa55332b033/go.mod h1:GxI+t9AW8+NsHkz2JkPBIJN//9eLUjTZl1ScYAbXMbk=
+github.com/gocrane/api v0.8.1-0.20221213081415-64b9beb331c1 h1:TQzdhwVvfOdD9RvH2IGWl9Z4ML0WnON+dXWYTu68ZtM=
+github.com/gocrane/api v0.8.1-0.20221213081415-64b9beb331c1/go.mod h1:GxI+t9AW8+NsHkz2JkPBIJN//9eLUjTZl1ScYAbXMbk=
 github.com/gocrane/crane v0.8.0 h1:DcqejWi2Lpsr4iNY+bDnM5d5NpCmZiOIE/oVfAXtaxA=
 github.com/gocrane/crane v0.8.0/go.mod h1:qO9VA+qZhSToG8OZoTOH+z75ow3/ZdsX5RstYnyZ6rk=
 github.com/godbus/dbus/v5 v5.0.3/go.mod h1:xhWf0FNVPg57R7Z0UbKHbJfkEywrmjJnf7w5xrFpKfA=
