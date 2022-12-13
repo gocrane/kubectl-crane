@@ -19,18 +19,16 @@ package main
 import (
 	"os"
 
-	"github.com/spf13/pflag"
-	"k8s.io/cli-runtime/pkg/genericclioptions"
-
 	"github.com/gocrane/kubectl-crane/pkg/cmd"
 )
 
 func main() {
-	flags := pflag.NewFlagSet("kubectl-crane", pflag.ExitOnError)
-	pflag.CommandLine = flags
+	command := cmd.NewCraneCommand()
 
-	root := cmd.NewCmdCrane(genericclioptions.IOStreams{In: os.Stdin, Out: os.Stdout, ErrOut: os.Stderr})
-	if err := root.Execute(); err != nil {
+	// Execute adds all child commands to the root command and sets flags appropriately.
+	// This is called by main.main(). It only needs to happen once to the rootCmd.
+	if err := command.Execute(); err != nil {
+		//fmt.Println(err)
 		os.Exit(1)
 	}
 }
