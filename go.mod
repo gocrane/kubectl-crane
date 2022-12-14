@@ -3,7 +3,7 @@ module github.com/gocrane/kubectl-crane
 go 1.17
 
 require (
-	github.com/gocrane/api v0.8.1-0.20221213081415-64b9beb331c1
+	github.com/gocrane/api v0.8.1-0.20221214085502-ce0ce68164fc
 	github.com/gocrane/crane v0.8.0
 	github.com/jedib0t/go-pretty/v6 v6.3.2
 	github.com/kolide/kit v0.0.0-20210803163830-e689ca24537d

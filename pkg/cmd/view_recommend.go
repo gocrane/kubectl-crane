@@ -19,7 +19,7 @@ import (
 var (
 	viewRecommendExample = `
 # view all recommend result with kube-system namespace
-%[1]s view-recommend --api-version v1 --kind Deployment -n {namespace} {name}
+%[1]s view-recommend --api-version apps/v1 --kind Deployment -n {namespace} {name}
 `
 )
 
@@ -61,6 +61,7 @@ func NewCmdViewRecommend() *cobra.Command {
 			return nil
 		},
 	}
+	o.CommonOptions.AddCommonFlag(command)
 	o.AddFlags(command)
 
 	return command
@@ -72,7 +73,7 @@ func (o *ViewRecommendOptions) Validate(args []string) error {
 	}
 
 	if o.APIVersion == "" || o.Kind == "" || o.CommonOptions.ConfigFlags.Namespace == nil || len(args) == 0 {
-		return errors.New("the recommender target is valid, please follow the guide `kubectl-crane view-recommend --api-version v1 --kind Deployment -n {namespace} {name}`")
+		return errors.New("the recommender target is valid, please follow the guide `kubectl-crane view-recommend --api-version apps/v1 --kind Deployment -n {namespace} {name}`")
 	}
 
 	return nil
@@ -102,6 +103,7 @@ func (o *ViewRecommendOptions) Run() error {
 	var recommendations []analysisv1alph1.Recommendation
 	for _, recommendation := range recommendResult.Items {
 		selected := true
+
 		if !reflect.DeepEqual(o.ResourceSelector, recommendation.Spec.TargetRef) {
 			selected = false
 		}
@@ -117,6 +119,6 @@ func (o *ViewRecommendOptions) Run() error {
 }
 
 func (o *ViewRecommendOptions) AddFlags(cmd *cobra.Command) {
-	cmd.Flags().StringVarP(&o.APIVersion, "api-version", "", "", "Specify source api-version")
-	cmd.Flags().StringVarP(&o.Kind, "kind", "", "", "Specify source kind")
+	cmd.Flags().StringVarP(&o.APIVersion, "api-version", "", "", "Specify target api-version")
+	cmd.Flags().StringVarP(&o.Kind, "kind", "", "", "Specify target kind")
 }

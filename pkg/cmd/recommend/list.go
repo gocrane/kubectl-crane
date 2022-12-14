@@ -3,7 +3,6 @@ package recommend
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"strconv"
@@ -23,14 +22,15 @@ import (
 
 var (
 	recommendListExample = `
+# view all recommend result with all namespace
+%[1]s recommend list
+
 # view all recommend result with kube-system namespace
 %[1]s recommend list --namespace kube-system
 
 # view Resource type recommend result with kube-system namespace
 %[1]s recommend list --namespace kube-system --type Resource
 `
-
-	recommenderMap = map[string]int{analysisv1alpha1.ReplicasRecommender: 1, analysisv1alpha1.ResourceRecommender: 2, analysisv1alpha1.IdleNodeRecommender: 3}
 )
 
 type RecommendListOptions struct {
@@ -39,6 +39,8 @@ type RecommendListOptions struct {
 	Name       string
 	Type       string
 	TargetKind string
+	TargetName string
+	RuleName   string
 }
 
 func NewRecommendListOptions() *RecommendListOptions {
@@ -82,8 +84,14 @@ func (o *RecommendListOptions) Validate() error {
 	}
 
 	if len(o.Type) > 0 {
-		if _, ok := recommenderMap[o.Type]; !ok {
-			return errors.New("the recommender only support Replicas,Resource and IdleNode")
+		typeExist := false
+		for _, recommenderType := range analysisv1alpha1.AllRecommenderType {
+			if recommenderType == o.Type {
+				typeExist = true
+			}
+		}
+		if !typeExist {
+			return fmt.Errorf("the recommender type not supported %s", o.Type)
 		}
 	}
 
@@ -110,6 +118,14 @@ func (o *RecommendListOptions) Run() error {
 
 	if len(o.TargetKind) > 0 {
 		query.LabelSelector[known.RecommendationRuleTargetKindLabel] = o.TargetKind
+	}
+
+	if len(o.TargetName) > 0 {
+		query.LabelSelector[known.RecommendationRuleTargetNameLabel] = o.TargetName
+	}
+
+	if len(o.RuleName) > 0 {
+		query.LabelSelector[known.RecommendationRuleNameLabel] = o.RuleName
 	}
 
 	namespace := ""
@@ -158,7 +174,7 @@ func RenderTable(recommendations []analysisv1alpha1.Recommendation, out io.Write
 	t.SetStyle(table.StyleLight)
 	t.SetOutputMirror(out)
 	header := table.Row{}
-	header = append(header, table.Row{"NAME", "RECOMMEND SOURCE", "NAMESPACE", "TARGET", "CURRENT RESOURCE", "RECOMMEND RESOURCE", "CREATED TIME", "UPDATED TIME"}...)
+	header = append(header, table.Row{"NAME", "NAMESPACE", "TYPE", "TARGET NAME", "TARGET NAMESPACE", "TARGET KIND", "CURRENT RESOURCE", "RECOMMEND RESOURCE", "ACTION", "CREATED TIME", "UPDATED TIME"}...)
 	t.AppendHeader(header)
 	t.SetColumnConfigs([]table.ColumnConfig{
 		{
@@ -176,19 +192,23 @@ func RenderTable(recommendations []analysisv1alpha1.Recommendation, out io.Write
 		row := table.Row{}
 
 		row = append(row, recommendation.Name)
+		row = append(row, recommendation.Namespace)
+		row = append(row, recommendation.Spec.Type)
+
 		row = append(row, recommendation.Spec.TargetRef.Name)
 		row = append(row, recommendation.Namespace)
 		row = append(row, recommendation.Spec.TargetRef.Kind)
 
 		currentResource := ""
 		recommendResource := ""
-		if recommendation.Spec.Type == "Resource" {
+		switch recommendation.Spec.Type {
+		case "Resource":
 			var currentInfo analysisv1alpha1.PatchResource
 			if err := json.Unmarshal([]byte(recommendation.Status.RecommendationContent.CurrentInfo), &currentInfo); err != nil {
 				row = append(row, "")
 			} else {
 				for _, container := range currentInfo.Spec.Template.Spec.Containers {
-					currentResource += container.Name + "/" + container.Resources.Requests.Cpu().String() + "m/" + container.Resources.Requests.Memory().String() + "\n"
+					currentResource += container.Name + "/" + container.Resources.Requests.Cpu().String() + "/" + container.Resources.Requests.Memory().String() + "\n"
 				}
 			}
 
@@ -197,10 +217,10 @@ func RenderTable(recommendations []analysisv1alpha1.Recommendation, out io.Write
 				row = append(row, "")
 			} else {
 				for _, container := range recommendInfo.Spec.Template.Spec.Containers {
-					recommendResource += container.Name + "/" + container.Resources.Requests.Cpu().String() + "m/" + container.Resources.Requests.Memory().String() + "\n"
+					recommendResource += container.Name + "/" + container.Resources.Requests.Cpu().String() + "/" + container.Resources.Requests.Memory().String() + "\n"
 				}
 			}
-		} else if recommendation.Spec.Type == "Replicas" {
+		case "Replicas":
 			var currentInfo analysisv1alpha1.PatchReplicas
 			if err := json.Unmarshal([]byte(recommendation.Status.RecommendationContent.CurrentInfo), &currentInfo); err != nil {
 				row = append(row, "")
@@ -214,10 +234,14 @@ func RenderTable(recommendations []analysisv1alpha1.Recommendation, out io.Write
 			} else {
 				recommendResource += strconv.Itoa(int(*recommendInfo.Spec.Replicas))
 			}
+		default:
+			recommendResource = recommendation.Status.RecommendedInfo
+			currentResource = recommendation.Status.CurrentInfo
 		}
 
 		row = append(row, currentResource)
 		row = append(row, recommendResource)
+		row = append(row, recommendation.Status.Action)
 
 		row = append(row, recommendation.CreationTimestamp)
 		row = append(row, recommendation.Status.LastUpdateTime)
@@ -233,7 +257,9 @@ func RenderTable(recommendations []analysisv1alpha1.Recommendation, out io.Write
 }
 
 func (o *RecommendListOptions) AddFlags(cmd *cobra.Command) {
-	cmd.Flags().StringVarP(&o.Type, "type", "", "Resource", "Specify the type for recommend[Resource, Replicas, IdleNode]")
-	cmd.Flags().StringVarP(&o.Name, "name", "", "", "Specify the name for recommend")
-	cmd.Flags().StringVarP(&o.TargetKind, "targetKind", "", "", "Specify the target type for recommendationrules")
+	cmd.Flags().StringVarP(&o.Type, "type", "", "", "List recommendation with specify recommend type[Resource, Replicas, IdleNode]")
+	cmd.Flags().StringVarP(&o.Name, "name", "", "", "Specify the name for recommendation")
+	cmd.Flags().StringVarP(&o.TargetKind, "targetKind", "", "", "List recommendation with specify recommendation target kind")
+	cmd.Flags().StringVarP(&o.TargetName, "targetName", "", "", "List recommendation with specify recommendation target name")
+	cmd.Flags().StringVarP(&o.RuleName, "ruleName", "", "", "List recommendation with specify recommendationRule name")
 }
