@@ -15,7 +15,6 @@ import (
 
 	analysisv1alpha1 "github.com/gocrane/api/analysis/v1alpha1"
 
-	"github.com/gocrane/crane/pkg/known"
 	"github.com/gocrane/kubectl-crane/pkg/cmd/options"
 	"github.com/gocrane/kubectl-crane/pkg/utils"
 )
@@ -31,6 +30,15 @@ var (
 # view Resource type recommend result with kube-system namespace
 %[1]s recommend list --namespace kube-system --type Resource
 `
+)
+
+const (
+	RecommendationRuleNameLabel          = "analysis.crane.io/recommendation-rule-name"
+	RecommendationRuleUidLabel           = "analysis.crane.io/recommendation-rule-uid"
+	RecommendationRuleRecommenderLabel   = "analysis.crane.io/recommendation-rule-recommender"
+	RecommendationRuleTargetKindLabel    = "analysis.crane.io/recommendation-target-kind"
+	RecommendationRuleTargetVersionLabel = "analysis.crane.io/recommendation-target-version"
+	RecommendationRuleTargetNameLabel    = "analysis.crane.io/recommendation-target-name"
 )
 
 type RecommendListOptions struct {
@@ -113,19 +121,19 @@ func (o *RecommendListOptions) Run() error {
 	}
 
 	if len(o.Type) > 0 {
-		query.LabelSelector[known.RecommendationRuleRecommenderLabel] = o.Type
+		query.LabelSelector[RecommendationRuleRecommenderLabel] = o.Type
 	}
 
 	if len(o.TargetKind) > 0 {
-		query.LabelSelector[known.RecommendationRuleTargetKindLabel] = o.TargetKind
+		query.LabelSelector[RecommendationRuleTargetKindLabel] = o.TargetKind
 	}
 
 	if len(o.TargetName) > 0 {
-		query.LabelSelector[known.RecommendationRuleTargetNameLabel] = o.TargetName
+		query.LabelSelector[RecommendationRuleTargetNameLabel] = o.TargetName
 	}
 
 	if len(o.RuleName) > 0 {
-		query.LabelSelector[known.RecommendationRuleNameLabel] = o.RuleName
+		query.LabelSelector[RecommendationRuleNameLabel] = o.RuleName
 	}
 
 	namespace := ""

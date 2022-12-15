@@ -4,7 +4,6 @@ go 1.17
 
 require (
 	github.com/gocrane/api v0.8.1-0.20221214085502-ce0ce68164fc
-	github.com/gocrane/crane v0.8.0
 	github.com/jedib0t/go-pretty/v6 v6.3.2
 	github.com/kolide/kit v0.0.0-20210803163830-e689ca24537d
 	github.com/spf13/cobra v1.4.0
@@ -82,8 +81,4 @@ require (
 	sigs.k8s.io/kustomize/api v0.11.4 // indirect
 	sigs.k8s.io/kustomize/kyaml v0.13.6 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.1 // indirect
-)
-
-replace (
-   k8s.io/kube-scheduler => k8s.io/kube-scheduler v0.22.3
 )
