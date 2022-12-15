@@ -22,14 +22,14 @@ var (
 %[1]s recommend adopt --name workloads-rule-resource-ntzns
 
 # pre-commit
-%[1]s recommend adopt --name workloads-rule-resource-ntzns --dry-run=All
+%[1]s recommend adopt --name workloads-rule-resource-ntzns --dry-run
 `
 )
 
 type RecommendAdoptOptions struct {
 	CommonOptions *options.CommonOptions
 
-	DryRun string
+	DryRun bool
 	Name   string
 }
 
@@ -107,7 +107,7 @@ func (o *RecommendAdoptOptions) Run() error {
 		}
 
 		patchOptions := metav1.PatchOptions{}
-		if len(o.DryRun) != 0 {
+		if o.DryRun {
 			patchOptions.DryRun = []string{"All"}
 		}
 
@@ -117,7 +117,7 @@ func (o *RecommendAdoptOptions) Run() error {
 		}
 
 		// when dry-run set, print the object
-		if len(o.DryRun) != 0 {
+		if o.DryRun {
 			printer := printers.NewTypeSetter(scheme.Scheme).ToPrinter(&printers.YAMLPrinter{})
 			if err = printer.PrintObj(patched, o.CommonOptions.Out); err != nil {
 				return err
@@ -133,5 +133,5 @@ func (o *RecommendAdoptOptions) Run() error {
 
 func (o *RecommendAdoptOptions) AddFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&o.Name, "name", "", "", "Specify the name for recommend")
-	cmd.Flags().StringVarP(&o.DryRun, "dry-run", "", "", "Pre-commit")
+	cmd.Flags().BoolVarP(&o.DryRun, "dry-run", "", false, "dry-run")
 }

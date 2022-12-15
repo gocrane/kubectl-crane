@@ -29,8 +29,8 @@ func NewCraneCommand() *cobra.Command {
 		Short:        "Kubectl plugin for crane, including recommendation and cost estimate.",
 	}
 
-	cmd.AddCommand(NewCmdCranePod())
-	cmd.AddCommand(NewCmdCraneWorkload())
+	//cmd.AddCommand(NewCmdCranePod())
+	//cmd.AddCommand(NewCmdCraneWorkload())
 	cmd.AddCommand(NewCmdRecommendationRule())
 	cmd.AddCommand(NewCmdRecommend())
 	cmd.AddCommand(NewCmdViewRecommend())

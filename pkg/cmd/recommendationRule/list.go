@@ -117,7 +117,7 @@ func (o *RecommendationRuleListOptions) renderTable(recommendationRules []analys
 	t.SetStyle(table.StyleLight)
 	t.SetOutputMirror(o.CommonOptions.Out)
 	header := table.Row{}
-	header = append(header, table.Row{"NAME", "RECOMMENDER", "TARGET", "NAMESPACE", "RUN INTERVAL", "CREATE TIME"}...)
+	header = append(header, table.Row{"NAME", "RECOMMENDER", "TARGET", "NAMESPACE", "RUN INTERVAL", "LAST UPDATE TIME", "CREATE TIME"}...)
 	t.AppendHeader(header)
 	t.SetColumnConfigs([]table.ColumnConfig{
 		{
@@ -158,6 +158,7 @@ func (o *RecommendationRuleListOptions) renderTable(recommendationRules []analys
 		row = append(row, strings.Join(namespaces, ","))
 
 		row = append(row, recommendRule.Spec.RunInterval)
+		row = append(row, recommendRule.Status.LastUpdateTime)
 		row = append(row, recommendRule.CreationTimestamp)
 
 		t.AppendRows([]table.Row{
