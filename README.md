@@ -11,7 +11,7 @@ Downloaded a tar file from [released packages](https://github.com/gocrane/kubect
 ### For Linux 
 
 ```bash
-export release=v0.0.2
+export release=v0.2.0
 export arch=x86_64
 curl -L -o kubectl-crane.tar.gz https://github.com/gocrane/kubectl-crane/releases/download/${release}/kubectl-crane_${release}_Linux_${arch}.tar.gz
 tar -xvf kubectl-crane.tar.gz 
@@ -21,7 +21,7 @@ cp kubectl-crane_${release}_Linux_${arch}/kubectl-crane /usr/local/bin/
 ### For Mac
 
 ```bash
-export release=v0.0.2
+export release=v0.2.0
 export arch=arm64
 curl -L -o kubectl-crane.tar.gz https://github.com/gocrane/kubectl-crane/releases/download/${release}/kubectl-crane_${release}_Darwin_${arch}.tar.gz
 tar -xvf kubectl-crane.tar.gz 
