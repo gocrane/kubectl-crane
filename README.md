@@ -28,4 +28,20 @@ tar -xvf kubectl-crane.tar.gz
 cp kubectl-crane_${release}_Darwin_${arch}/kubectl-crane /usr/local/bin/
 ```
 
+## Usage 
 
+```
+$ kubectl crane -h
+Kubectl plugin for crane, including recommendation and cost estimate.
+
+Usage:
+  kubectl crane [command]
+
+Available Commands:
+  completion         Generate the autocompletion script for the specified shell
+  help               Help about any command
+  recommend          view or adopt recommend result
+  recommendationrule manage recommendation rules
+  version            Print kubectl-crane version
+  view-recommend     View a source which recommends related.
+```
