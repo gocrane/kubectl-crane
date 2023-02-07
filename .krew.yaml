@@ -1,0 +1,101 @@
+apiVersion: krew.googlecontainertools.github.com/v1alpha2
+kind: Plugin
+metadata:
+  name: crane
+spec:
+  homepage: https://github.com/gocrane/kubectl-crane
+  shortDescription: "Easily interact with crane"
+  description: |
+    Kubectl plugin for crane, including recommendation and cost estimate,
+    Crane is a FinOps Platform for Cloud Resource Analytics 
+    and Economics in Kubernetes clusters.
+  version: {{ .TagName }}
+  platforms:
+  - selector:
+      matchLabels:
+        os: darwin
+        arch: arm64
+    {{addURIAndSha "https://github.com/gocrane/kubectl-crane/releases/download/{{ .TagName }}/kubectl-crane_{{ .TagName }}_Darwin_arm64.tar.gz" .TagName }}
+    files:
+    - from: kubectl-crane_{{ .TagName }}_Darwin_arm64/kubectl-crane
+      to: kubectl-crane
+    - from: kubectl-crane_{{ .TagName }}_Darwin_arm64/LICENSE
+      to: LICENSE
+    bin: kubectl-crane
+  - selector:
+      matchLabels:
+        os: darwin
+        arch: amd64
+    {{addURIAndSha "https://github.com/gocrane/kubectl-crane/releases/download/{{ .TagName }}/kubectl-crane_{{ .TagName }}_Darwin_x86_64.tar.gz" .TagName }}
+    files:
+    - from: kubectl-crane_{{ .TagName }}_Darwin_x86_64/kubectl-crane
+      to: kubectl-crane
+    - from: kubectl-crane_{{ .TagName }}_Darwin_x86_64/LICENSE
+      to: LICENSE
+    bin: kubectl-crane
+  - selector:
+      matchLabels:
+        os: linux
+        arch: amd64
+    {{addURIAndSha "https://github.com/gocrane/kubectl-crane/releases/download/{{ .TagName }}/kubectl-crane_{{ .TagName }}_Linux_x86_64.tar.gz" .TagName }}
+    files:
+    - from: kubectl-crane_{{ .TagName }}_Linux_x86_64/kubectl-crane
+      to: kubectl-crane
+    - from: kubectl-crane_{{ .TagName }}_Linux_x86_64/LICENSE
+      to: LICENSE
+    bin: kubectl-crane
+  - selector:
+      matchLabels:
+        os: linux
+        arch: arm64
+    {{addURIAndSha "https://github.com/gocrane/kubectl-crane/releases/download/{{ .TagName }}/kubectl-crane_{{ .TagName }}_Linux_arm64.tar.gz" .TagName }}
+    files:
+    - from: kubectl-crane_{{ .TagName }}_Linux_arm64/kubectl-crane
+      to: kubectl-crane
+    - from: kubectl-crane_{{ .TagName }}_Linux_arm64/LICENSE
+      to: LICENSE
+    bin: kubectl-crane
+  - selector:
+      matchLabels:
+        os: linux
+        arch: 386
+    {{addURIAndSha "https://github.com/gocrane/kubectl-crane/releases/download/{{ .TagName }}/kubectl-crane_{{ .TagName }}_Linux_i386.tar.gz" .TagName }}
+    files:
+    - from: kubectl-crane_{{ .TagName }}_Linux_i386/kubectl-crane
+      to: kubectl-crane
+    - from: kubectl-crane_{{ .TagName }}_Linux_i386/LICENSE
+      to: LICENSE
+    bin: kubectl-crane
+  - selector:
+      matchLabels:
+        os: windows
+        arch: amd64
+    {{addURIAndSha "https://github.com/gocrane/kubectl-crane/releases/download/{{ .TagName }}/kubectl-crane_{{ .TagName }}_Windows_x86_64.zip" .TagName }}
+    files:
+    - from: kubectl-crane_{{ .TagName }}_Windows_x86_64/kubectl-crane.exe
+      to: kubectl-crane.exe
+    - from: kubectl-crane_{{ .TagName }}_Windows_x86_64/LICENSE
+      to: LICENSE
+    bin: kubectl-crane.exe
+  - selector:
+      matchLabels:
+        os: windows
+        arch: arm64
+    {{addURIAndSha "https://github.com/gocrane/kubectl-crane/releases/download/{{ .TagName }}/kubectl-crane_{{ .TagName }}_Windows_arm64.zip" .TagName }}
+    files:
+    - from: kubectl-crane_{{ .TagName }}_Windows_arm64/kubectl-crane.exe
+      to: kubectl-crane.exe
+    - from: kubectl-crane_{{ .TagName }}_Windows_arm64/LICENSE
+      to: LICENSE
+    bin: kubectl-crane.exe
+  - selector:
+      matchLabels:
+        os: windows
+        arch: 386
+    {{addURIAndSha "https://github.com/gocrane/kubectl-crane/releases/download/{{ .TagName }}/kubectl-crane_{{ .TagName }}_Windows_i386.zip" .TagName }}
+    files:
+    - from: kubectl-crane_{{ .TagName }}_Windows_i386/kubectl-crane.exe
+      to: kubectl-crane.exe
+    - from: kubectl-crane_{{ .TagName }}_Windows_i386/LICENSE
+      to: LICENSE
+    bin: kubectl-crane.exe
