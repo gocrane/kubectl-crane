@@ -4,13 +4,21 @@
 
 Kubectl plugin for crane, including recommendation and cost estimate.
 
-## Installation 
+## Installation
+
+You can install `kubectl-crane` plugin in any of the following ways:
+
+- One-click installation.
+- Install using Krew.
+- Build from source code.
+
+### One-click installation
 
 Downloaded a tar file from [released packages](https://github.com/gocrane/kubectl-crane/releases) and extract `kubectl-crane` from it, then put the binary under your path.
 
-### For Linux 
+#### For Linux
 
-```bash
+```shell
 export release=v0.2.0
 export arch=x86_64
 curl -L -o kubectl-crane.tar.gz https://github.com/gocrane/kubectl-crane/releases/download/${release}/kubectl-crane_${release}_Linux_${arch}.tar.gz
@@ -18,9 +26,9 @@ tar -xvf kubectl-crane.tar.gz
 cp kubectl-crane_${release}_Linux_${arch}/kubectl-crane /usr/local/bin/
 ```
 
-### For Mac
+#### For Mac
 
-```bash
+```shell
 export release=v0.2.0
 export arch=arm64
 curl -L -o kubectl-crane.tar.gz https://github.com/gocrane/kubectl-crane/releases/download/${release}/kubectl-crane_${release}_Darwin_${arch}.tar.gz
@@ -28,9 +36,33 @@ tar -xvf kubectl-crane.tar.gz
 cp kubectl-crane_${release}_Darwin_${arch}/kubectl-crane /usr/local/bin/
 ```
 
-## Usage 
+### Install using Krew
 
+`Krew` is the plugin manager for `kubectl` command-line tool.
+
+[Install and setup](https://krew.sigs.k8s.io/docs/user-guide/setup/install/) Krew on your machine.
+
+Then install `kubectl-crane` plug-in:
+
+```shell
+kubectl krew install crane
 ```
+
+### Build from source code
+
+```shell
+git clone https://github.com/gocrane/kubectl-crane.git
+cd kubectl-crane
+export CGO_ENABLED=0
+go mod vendor
+go build -o kubectl-crane ./cmd/
+```
+
+Next, move the `kubectl-crane` executable file in the project root directory to the `PATH` path.
+
+## Usage
+
+```text
 $ kubectl crane -h
 Kubectl plugin for crane, including recommendation and cost estimate.
 
