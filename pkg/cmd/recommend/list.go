@@ -39,6 +39,7 @@ const (
 	RecommendationRuleTargetKindLabel    = "analysis.crane.io/recommendation-target-kind"
 	RecommendationRuleTargetVersionLabel = "analysis.crane.io/recommendation-target-version"
 	RecommendationRuleTargetNameLabel    = "analysis.crane.io/recommendation-target-name"
+	RunNumberAnnotation                  = "analysis.crane.io/run-number"
 )
 
 type RecommendListOptions struct {
