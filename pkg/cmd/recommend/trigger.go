@@ -15,11 +15,11 @@ import (
 
 var (
 	triggerRecommendExample = `
-# manually trigger the specified recommendation rule
-%[1]s recommend trigger --name workloads-ntzns -n default
+# manually trigger the specified recommendation 
+%[1]s recommend trigger --name workloads-rule-resource-kjdfh -n kube-system
 
 # pre-commit
-%[1]s recommend trigger --name workloads-ntzns -n default --dry-run
+%[1]s recommend trigger --name workloads-rule-resource-kjdfh -n kube-system --dry-run
 `
 )
 
