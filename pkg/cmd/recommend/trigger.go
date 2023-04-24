@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strconv"
 
 	"github.com/gocrane/kubectl-crane/pkg/cmd/options"
 	"github.com/spf13/cobra"
@@ -97,23 +96,13 @@ func (o *RecommendTriggerOptions) Run() error {
 		return errors.New("the recommend doesn't exist, please specify a existed recommend name with --name")
 	}
 
-	// get related recommendation rule
-	recommendationRuleName, ok := recommend.Labels[RecommendationRuleNameLabel]
-	if !ok {
-		return errors.New("failed to get related recommendation rule, because it lost the label for recommendation rule")
-	}
-	recommendationRule, err := o.CommonOptions.CraneClient.AnalysisV1alpha1().RecommendationRules().Get(context.TODO(), recommendationRuleName, metav1.GetOptions{})
-	if err != nil {
-		return fmt.Errorf("failed to get related recommendation rule, %v", err)
-	}
-
-	// Obtain the runNumber from the recommendationRule
-	runNumber := recommendationRule.Status.RunNumber
-
 	// Modify the run number annotation for the recommendation that should be triggered.
 	// The run number should be lower than the runNumber in the recommendationRule.
-	runNumber -= 1
-	recommend.Annotations[RunNumberAnnotation] = strconv.Itoa(int(runNumber))
+	// Just set the run number annotation to zero
+	if recommend.Annotations == nil {
+		recommend.Annotations = make(map[string]string, 0)
+	}
+	recommend.Annotations[RunNumberAnnotation] = "0"
 	updateOptions := metav1.UpdateOptions{}
 	if o.DryRun {
 		updateOptions.DryRun = []string{"All"}
