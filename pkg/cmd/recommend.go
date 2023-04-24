@@ -28,6 +28,7 @@ func NewCmdRecommend() *cobra.Command {
 
 	cmd.AddCommand(recommend.NewCmdRecommendList())
 	cmd.AddCommand(recommend.NewCmdRecommendAdopt())
+	cmd.AddCommand(recommend.NewCmdRecommendTrigger())
 
 	return cmd
 }

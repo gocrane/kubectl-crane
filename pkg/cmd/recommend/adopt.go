@@ -18,7 +18,7 @@ import (
 
 var (
 	recommendAdoptExample = `
-# view all recommend result with kube-system namespace
+# adopt the specified recommendation rule
 %[1]s recommend adopt --name workloads-rule-resource-ntzns
 
 # pre-commit
@@ -103,7 +103,7 @@ func (o *RecommendAdoptOptions) Run() error {
 		string(recommend.Spec.Type) == "Resource" {
 		gvr, err := utils.GetGroupVersionResource(o.CommonOptions.DiscoveryClient, recommend.Spec.TargetRef.APIVersion, recommend.Spec.TargetRef.Kind)
 		if err != nil {
-			return errors.New(fmt.Sprintf("Recommendation type %s is not supported for adoption ", string(recommend.Spec.Type)))
+			return fmt.Errorf("recommendation type %s is not supported for adoption", string(recommend.Spec.Type))
 		}
 
 		patchOptions := metav1.PatchOptions{}
@@ -113,7 +113,7 @@ func (o *RecommendAdoptOptions) Run() error {
 
 		patched, err := o.CommonOptions.DynamicClient.Resource(*gvr).Namespace(recommend.Spec.TargetRef.Namespace).Patch(context.TODO(), recommend.Spec.TargetRef.Name, types.StrategicMergePatchType, []byte(recommend.Status.RecommendedInfo), patchOptions)
 		if err != nil {
-			return errors.New(fmt.Sprintf("adopt the recommend failed because %v", err))
+			return fmt.Errorf("adopt the recommend failed because %v", err)
 		}
 
 		// when dry-run set, print the object
@@ -125,7 +125,7 @@ func (o *RecommendAdoptOptions) Run() error {
 		}
 
 	} else {
-		return errors.New(fmt.Sprintf("Recommendation type %s is not supported for adoption ", string(recommend.Spec.Type)))
+		return fmt.Errorf("recommendation type %s is not supported for adoption ", string(recommend.Spec.Type))
 	}
 
 	return nil
